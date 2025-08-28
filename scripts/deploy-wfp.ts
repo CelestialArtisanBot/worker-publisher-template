@@ -3,89 +3,66 @@ import { toFile } from "cloudflare/index";
 
 const apiToken = process.env.CLOUDFLARE_API_TOKEN ?? "";
 const accountID = process.env.CLOUDFLARE_ACCOUNT_ID ?? "";
+const scriptName = process.env.WORKER_SCRIPT_NAME ?? "pick-of-gods-chat-worker";
 
-if (!apiToken) throw new Error("Please set env var CLOUDFLARE_API_TOKEN");
-if (!accountID) throw new Error("Please set env var CLOUDFLARE_ACCOUNT_ID");
+if (!apiToken) throw new Error("Please set CLOUDFLARE_API_TOKEN");
+if (!accountID) throw new Error("Please set CLOUDFLARE_ACCOUNT_ID");
 
 const cf = new Cloudflare({ apiToken });
 
-// Deploy a code snippet into a Workers for Platforms dispatch namespace
-export async function deploySnippetToNamespace(opts: {
-	namespaceName: string;
-	scriptName: string;
-	code: string; // ES module Worker code
-	bindings?: Array<
-		| { type: "plain_text"; name: string; text: string }
-		| { type: "kv_namespace"; name: string; namespace_id: string }
-		| { type: "r2_bucket"; name: string; bucket_name: string }
-		// add other binding types as needed
-	>;
+// --- Deploy Worker (free-tier compatible)
+export async function deployWorker(opts: {
+  code: string;
+  bindings?: Array<
+    | { type: "plain_text"; name: string; text: string }
+    | { type: "kv_namespace"; name: string; namespace_id: string }
+    | { type: "r2_bucket"; name: string; bucket_name: string }
+    | { type: "durable_object_namespace"; name: string; class_name: string; script_name?: string }
+    | { type: "d1_database"; name: string; database_name: string }
+    | { type: "wasm_module"; name: string; part: string }
+  >;
 }) {
-	const { namespaceName, scriptName, code, bindings = [] } = opts;
+  const { code, bindings = [] } = opts;
 
-	// 1) Ensure dispatch namespace exists (create if missing)
-	let ns = null as null | { namespace_name?: string };
-	try {
-		ns = await cf.workersForPlatforms.dispatch.namespaces.get(namespaceName, {
-			account_id: accountID,
-		});
-	} catch {
-		ns = await cf.workersForPlatforms.dispatch.namespaces.create({
-			account_id: accountID,
-			name: namespaceName,
-		});
-	}
+  await cf.workers.scripts.update(scriptName, {
+    account_id: accountID,
+    files: {
+      "index.mjs": await toFile(Buffer.from(code), "index.mjs", {
+        type: "application/javascript+module",
+      }),
+    },
+    metadata: {
+      main_module: "index.mjs",
+      bindings,
+    },
+  });
 
-	const moduleFileName = `${scriptName}.mjs`;
-
-	// 2) Upload as a module worker into the namespace
-	await cf.workersForPlatforms.dispatch.namespaces.scripts.update(
-		namespaceName,
-		scriptName,
-		{
-			account_id: accountID,
-			metadata: {
-				main_module: moduleFileName,
-				bindings,
-			},
-			files: {
-				[moduleFileName]: await toFile(Buffer.from(code), moduleFileName, {
-					type: "application/javascript+module",
-				}),
-			},
-		},
-	);
-
-	return {
-		namespace: namespaceName,
-		script: scriptName,
-	};
+  console.log(`✅ Worker ${scriptName} deployed successfully.`);
 }
 
 // --- Example usage ---
 if (require.main === module) {
-	const code = `
-    export default {
-      async fetch(req, env) {
-        return new Response(env.MESSAGE ?? "Hello from WfP!", { status: 200 });
-      }
-    };
+  const code = `
+  export default {
+    async fetch(req, env) {
+      const message = env.MESSAGE ?? "Hello from Chat Worker!";
+      return new Response(message, { status: 200 });
+    }
+  };
   `;
 
-	deploySnippetToNamespace({
-		namespaceName: "my-dispatch-namespace",
-		scriptName: "my-hello-world-script",
-		code,
-		bindings: [{ type: "plain_text", name: "MESSAGE", text: "Hello World!" }],
-	})
-		.then((res) => {
-			console.log("Deployed:", res);
-			console.log(
-				"Call it from your dynamic dispatch worker with namespace binding.",
-			);
-		})
-		.catch((err) => {
-			console.error("Deploy failed:", err);
-			process.exit(1);
-		});
+  deployWorker({
+    code,
+    bindings: [
+      { type: "plain_text", name: "MESSAGE", text: "Hello World!" },
+      { type: "kv_namespace", name: "KVNAMESPACE", namespace_id: "095c5451dd0f4c18b6df88530673001b" },
+      { type: "r2_bucket", name: "R2_BUCKET", bucket_name: "r2-explorer-bucket" },
+      { type: "durable_object_namespace", name: "MY_DO", class_name: "llmchatapp_MyDurableObject" },
+      { type: "d1_database", name: "AUTH_DB", database_name: "d1-template-database" },
+      { type: "plain_text", name: "WORKER_ENV", text: "free-tier" },
+    ],
+  }).catch((err) => {
+    console.error("❌ Deploy failed:", err);
+    process.exit(1);
+  });
 }
