@@ -1,13 +1,13 @@
-# Cloudflare API token with Workers:Edit
-CLOUDFLARE_API_TOKEN=deee1798a610f6c7842da5b3777ef377
+# Cloudflare API token with Workers:Edit permissions
+CLOUDFLARE_API_TOKEN=nx4Acz2IOgcTIain8EzcA4CVm6MD7Ymcs3UVyHsV
 
 # Cloudflare account ID
-CLOUDFLARE_ACCOUNT_ID=85d4350c-259b-428c-9622-db1345571d34
+CLOUDFLARE_ACCOUNT_ID=deee1798a610f6c7842da5b3777ef377
 
 # Worker script name
 WORKER_SCRIPT_NAME=pick-of-gods-chat-worker
 
-# D1 database ID
+# D1 database ID (from the dashboard)
 D1_DB_ID=85d4350c-259b-428c-9622-db1345571d34
 
 # KV namespace ID
@@ -19,11 +19,8 @@ R2_BUCKET=r2-explorer-bucket
 # Durable Object class name
 MY_DO=llmchatapp_MyDurableObject
 
-# Optional message to display
+# Optional message to display in Worker
 MESSAGE=Hello from free-tier Worker!
 
-# Environment tag
-WORKER_ENV=free-tier
-
-# Read-only mode toggle
+# Readonly toggle (false = full deploy permissions)
 READONLY=false
