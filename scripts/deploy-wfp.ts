@@ -1,43 +1,47 @@
 import Cloudflare from "cloudflare";
 import fs from "fs";
-import path from "path";
 
-const CF_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID!;
-const CF_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN!;
-const DISPATCH_NAMESPACE = "my-dispatch-namespace";
+const env = process.env;
 
-async function deployWorker(scriptName: string, codePath: string) {
-  const cf = new Cloudflare({ apiToken: CF_API_TOKEN });
+if (!env.CLOUDFLARE_API_TOKEN || !env.CLOUDFLARE_ACCOUNT_ID) {
+  throw new Error("Missing CLOUDFLARE_API_TOKEN or CLOUDFLARE_ACCOUNT_ID in env");
+}
 
-  // Read worker code
-  const code = fs.readFileSync(path.resolve(codePath), "utf-8");
+const cf = new Cloudflare({ apiToken: env.CLOUDFLARE_API_TOKEN });
 
-  // Ensure namespace exists
+async function deployWorker(scriptName: string, code: string) {
+  const namespaceName = "my-dispatch-namespace";
+
   try {
-    await cf.workersForPlatforms.dispatch.namespaces.get(DISPATCH_NAMESPACE, { account_id: CF_ACCOUNT_ID });
+    await cf.workersForPlatforms.dispatch.namespaces.get(namespaceName, {
+      account_id: env.CLOUDFLARE_ACCOUNT_ID,
+    });
   } catch {
     await cf.workersForPlatforms.dispatch.namespaces.create({
-      account_id: CF_ACCOUNT_ID,
-      name: DISPATCH_NAMESPACE
+      account_id: env.CLOUDFLARE_ACCOUNT_ID,
+      name: namespaceName,
     });
   }
 
   const moduleFileName = `${scriptName}.mjs`;
 
   await cf.workersForPlatforms.dispatch.namespaces.scripts.update(
-    DISPATCH_NAMESPACE,
+    namespaceName,
     scriptName,
     {
-      account_id: CF_ACCOUNT_ID,
+      account_id: env.CLOUDFLARE_ACCOUNT_ID,
       metadata: { main_module: moduleFileName },
-      files: { [moduleFileName]: new File([code], moduleFileName, { type: "application/javascript+module" }) }
-    }
+      files: {
+        [moduleFileName]: new File([code], moduleFileName, {
+          type: "application/javascript+module",
+        }),
+      },
+    },
   );
 
-  console.log(`✅ Worker ${scriptName} deployed to ${DISPATCH_NAMESPACE}`);
+  console.log(`✅ Worker '${scriptName}' deployed successfully!`);
 }
 
-// Example usage: node scripts/deploy-wfp.js my-worker ./src/index.ts
-const [,, scriptName, codePath] = process.argv;
-if (!scriptName || !codePath) throw new Error("Usage: deploy-wfp <scriptName> <codePath>");
-deployWorker(scriptName, codePath);
+// Read your Worker code
+const code = fs.readFileSync("./src/index.ts", "utf-8");
+deployWorker(env.WORKER_SCRIPT_NAME!, code);
