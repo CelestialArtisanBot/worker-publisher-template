@@ -1,63 +1,54 @@
+import fs from "fs";
+import path from "path";
 import Cloudflare from "cloudflare";
-import { toFile } from "cloudflare/index";
 
-const apiToken = process.env.CLOUDFLARE_API_TOKEN ?? "";
-const accountID = process.env.CLOUDFLARE_ACCOUNT_ID ?? "";
-const scriptName = process.env.WORKER_SCRIPT_NAME ?? "pick-of-gods-chat-worker";
+// Environment variables (hardcoded to your info)
+const API_TOKEN = process.env.CLOUDFLARE_API_TOKEN!;
+const ACCOUNT_ID = "celestialartisanbot@gmail.com"; // Your account ID
+if (!API_TOKEN) throw new Error("Set CLOUDFLARE_API_TOKEN in your environment");
 
-if (!apiToken) throw new Error("Please set CLOUDFLARE_API_TOKEN");
-if (!accountID) throw new Error("Please set CLOUDFLARE_ACCOUNT_ID");
+// Initialize Cloudflare client
+const cf = new Cloudflare({ apiToken: API_TOKEN });
 
-const cf = new Cloudflare({ apiToken });
-
-export async function deployWorker(opts: {
-  code: string;
+interface DeployOptions {
+  scriptName: string;
+  filePath: string;
   bindings?: Array<
     | { type: "plain_text"; name: string; text: string }
     | { type: "kv_namespace"; name: string; namespace_id: string }
     | { type: "r2_bucket"; name: string; bucket_name: string }
-    | { type: "durable_object_namespace"; name: string; class_name: string; script_name?: string }
-    | { type: "d1_database"; name: string; database_name: string }
-    | { type: "wasm_module"; name: string; part: string }
   >;
-}) {
-  const { code, bindings = [] } = opts;
+}
 
-  await cf.workers.scripts.update(scriptName, {
-    account_id: accountID,
-    files: {
-      "index.mjs": await toFile(Buffer.from(code), "index.mjs", {
-        type: "application/javascript+module",
-      }),
-    },
-    metadata: {
-      main_module: "index.mjs",
-      bindings,
-    },
+async function deployToNamespace(opts: DeployOptions) {
+  const { scriptName, filePath, bindings = [] } = opts;
+  const code = fs.readFileSync(path.resolve(filePath), "utf8");
+  const moduleFileName = `${scriptName}.mjs`;
+  const namespaceName = "my-dispatch-namespace";
+
+  // Ensure namespace exists
+  try {
+    await cf.workersForPlatforms.dispatch.namespaces.get(namespaceName, { account_id: ACCOUNT_ID });
+  } catch {
+    await cf.workersForPlatforms.dispatch.namespaces.create({ account_id: ACCOUNT_ID, name: namespaceName });
+  }
+
+  // Upload the script
+  await cf.workersForPlatforms.dispatch.namespaces.scripts.update(namespaceName, scriptName, {
+    account_id: ACCOUNT_ID,
+    metadata: { main_module: moduleFileName, bindings },
+    files: { [moduleFileName]: new File([code], moduleFileName, { type: "application/javascript+module" }) },
   });
 
-  console.log(`✅ Worker ${scriptName} deployed successfully.`);
+  console.log(`✅ Deployed "${scriptName}" to Dispatch namespace "${namespaceName}"`);
 }
 
-if (require.main === module) {
-  const code = `
-  export default {
-    async fetch(req, env) {
-      const message = env.MESSAGE ?? "Hello from Chat Worker!";
-      return new Response(message, { status: 200 });
-    }
-  };
-  `;
+// Run deploy from CLI
+const scriptName = process.argv[2] || "example-worker";
+const filePath = process.argv[3] || "./src/index.ts";
 
-  deployWorker({
-    code,
-    bindings: [
-      { type: "plain_text", name: "MESSAGE", text: "Hello World!" },
-      { type: "kv_namespace", name: "KV_STORE", namespace_id: process.env.KVNAMESPACE! },
-      { type: "r2_bucket", name: "R2_BUCKET", bucket_name: process.env.R2_BUCKET! },
-      { type: "durable_object_namespace", name: "MY_DO", class_name: process.env.MY_DO! },
-      { type: "d1_database", name: "DB", database_name: process.env.D1_DB_ID! },
-      { type: "plain_text", name: "WORKER_ENV", text: "free-tier" },
-    ],
-  }).catch(console.error);
-}
+deployToNamespace({ scriptName, filePath, bindings: [
+  { type: "plain_text", name: "READONLY", text: "true" },
+  { type: "kv_namespace", name: "KVNAMESPACE", namespace_id: "095c5451dd0f4c18b6df88530673001b" },
+  { type: "r2_bucket", name: "R2_BUCKET", bucket_name: "r2-explorer-bucket" }
+]}).catch(console.error);
