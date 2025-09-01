@@ -18,7 +18,6 @@ export async function deployWorker(opts: {
     | { type: "kv_namespace"; name: string; namespace_id: string }
     | { type: "r2_bucket"; name: string; bucket_name: string }
     | { type: "durable_object_namespace"; name: string; class_name: string; script_name?: string }
-    | { type: "d1_database"; name: string; database_name: string }
     | { type: "wasm_module"; name: string; part: string }
   >;
 }) {
@@ -43,10 +42,21 @@ export async function deployWorker(opts: {
 // --- Example usage ---
 if (require.main === module) {
   const code = `
+  const D1_PROXY_URL = "https://your-d1-proxy-worker.your-subdomain.workers.dev";
+
   export default {
-    async fetch(req, env) {
-      const message = env.MESSAGE ?? "Hello from Chat Worker!";
-      return new Response(message, { status: 200 });
+    async fetch(req) {
+      const url = new URL(req.url);
+
+      if (url.pathname.startsWith("/comments")) {
+        const res = await fetch(\`\${D1_PROXY_URL}/comments\`);
+        const data = await res.json();
+        return new Response(JSON.stringify(data), {
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+
+      return new Response("Hello from Publisher Worker!", { status: 200 });
     }
   };
   `;
@@ -54,12 +64,10 @@ if (require.main === module) {
   deployWorker({
     code,
     bindings: [
-      { type: "plain_text", name: "MESSAGE", text: "Hello World!" },
+      { type: "plain_text", name: "WORKER_ENV", text: "free-tier" },
       { type: "kv_namespace", name: "KVNAMESPACE", namespace_id: "095c5451dd0f4c18b6df88530673001b" },
       { type: "r2_bucket", name: "R2_BUCKET", bucket_name: "r2-explorer-bucket" },
       { type: "durable_object_namespace", name: "MY_DO", class_name: "llmchatapp_MyDurableObject" },
-      { type: "d1_database", name: "AUTH_DB", database_name: "d1-template-database" },
-      { type: "plain_text", name: "WORKER_ENV", text: "free-tier" },
     ],
   }).catch((err) => {
     console.error("❌ Deploy failed:", err);
