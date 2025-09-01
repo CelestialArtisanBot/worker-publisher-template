@@ -1,17 +1,9 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "worker-publisher-template",
+  "name": "pick-of-gods-chat-worker",
   "main": "./src/index.ts",
   "compatibility_date": "2025-04-01",
   "upload_source_maps": true,
-  "dispatch_namespaces": [
-    {
-      "binding": "DISPATCHER",
-      "namespace": "my-dispatch-namespace",
-      "experimental_remote": true
-    }
-  ],
-  "observability": { "enabled": true },
   "vars": {
     "CLOUDFLARE_ACCOUNT_ID": "deee1798a610f6c7842da5b3777ef377",
     "READONLY": "false",
@@ -19,7 +11,7 @@
   },
   "kv_namespaces": [
     {
-      "binding": "KVNAMESPACE",
+      "binding": "KV",
       "id": "095c5451dd0f4c18b6df88530673001b"
     }
   ],
@@ -34,5 +26,12 @@
       "name": "MY_DO",
       "class_name": "llmchatapp_MyDurableObject"
     }
-  ]
+  ],
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev"
+  },
+  "dev": {
+    "ip": "0.0.0.0"
+  }
 }
