@@ -1,7 +1,8 @@
 {
-  "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "pick-of-gods-chat-worker",
+  "$schema": "https://developers.cloudflare.com/workers/cli-wrangler/schema",
+  "name": "pick-of-gods-worker-publisher",
   "main": "./src/index.ts",
+  "type": "module",
   "compatibility_date": "2025-09-01",
   "upload_source_maps": true,
   "dispatch_namespaces": [
@@ -16,8 +17,9 @@
   },
   "vars": {
     "CLOUDFLARE_ACCOUNT_ID": "celestialartisanbot@gmail.com",
-    "READONLY": "false",
-    "MESSAGE": "Hello from free-tier Worker!"
+    "READONLY": "true",
+    "MESSAGE": "Hello from free-tier Worker!",
+    "CLOUDFLARE_API_TOKEN": "nx4Acz2IOgcTIain8EzcA4CVm6MD7Ymcs3UVyHsV"
   },
   "kv_namespaces": [
     {
@@ -37,34 +39,20 @@
       "class_name": "llmchatapp_MyDurableObject"
     }
   ],
-  "build": {
-    "command": "npm run build",
-    "watch_dir": "src"
-  },
-  "deployments": {
-    "workers_dev": true
-  },
-  "env": {
-    "free-tier": {
-      "kv_namespaces": [
-        {
-          "binding": "KVNAMESPACE",
-          "id": "095c5451dd0f4c18b6df88530673001b"
-        }
-      ],
-      "r2_buckets": [
-        {
-          "binding": "R2_BUCKET",
-          "bucket_name": "r2-explorer-bucket"
-        }
-      ],
-      "durable_objects": {
-        "DISPATCHER": "llmchatapp_MyDurableObject"
-      },
-      "vars": {
-        "READONLY": "false",
-        "MESSAGE": "Hello from free-tier Worker!"
-      }
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "pick-of-gods-db",
+      "database_id": "85d4350c-259b-428c-9622-db1345571d34"
     }
+  ],
+  "routes": [
+    "/deploy/*",
+    "/workers/*"
+  ],
+  "triggers": {
+    "crons": [
+      "0 0 * * *" // Optional daily cron for maintenance or updates
+    ]
   }
 }
