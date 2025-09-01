@@ -13,8 +13,8 @@
   ],
   "observability": { "enabled": true },
   "vars": {
-    "CLOUDFLARE_ACCOUNT_ID": "celestialartisanbot@gmail.com",
-    "READONLY": "true",
+    "CLOUDFLARE_ACCOUNT_ID": "deee1798a610f6c7842da5b3777ef377",
+    "READONLY": "false",
     "MESSAGE": "Hello from free-tier Worker!"
   },
   "kv_namespaces": [
