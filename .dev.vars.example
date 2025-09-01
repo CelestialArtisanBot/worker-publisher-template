@@ -1,29 +1,24 @@
-# Cloudflare API token with Workers:Edit permissions
-CLOUDFLARE_API_TOKEN=your-cloudflare-api-token
+# Cloudflare
+CLOUDFLARE_API_TOKEN=nx4Acz2IOgcTIain8EzcA4CVm6MD7Ymcs3UVyHsV
+CLOUDFLARE_ACCOUNT_ID=deee1798a610f6c7842da5b3777ef377
 
-# Cloudflare account ID
-CLOUDFLARE_ACCOUNT_ID=your-account-id
-
-# Worker script name
+# Worker
 WORKER_SCRIPT_NAME=pick-of-gods-chat-worker
-
-# D1 database ID (from the dashboard)
-D1_DB_ID=85d4350c-259b-428c-9622-db1345571d34
-
-# Account ID (for D1 HTTP API)
-ACCOUNT_ID=your-account-id
-
-# KV namespace ID
-KVNAMESPACE=095c5451dd0f4c18b6df88530673001b
-
-# R2 bucket name
-R2_BUCKET=r2-explorer-bucket
-
-# Durable Object class name
-MY_DO=llmchatapp_MyDurableObject
-
-# Optional message to display in Worker
+WORKER_ENV=free-tier
 MESSAGE=Hello from free-tier Worker!
 
-# Environment tag
-WORKER_ENV=free-tier
+# D1 Database
+D1_DB_ID=85d4350c-259b-428c-9622-db1345571d34
+
+# KV
+KVNAMESPACE=095c5451dd0f4c18b6df88530673001b
+AUTH_STORAGE_NAMESPACE_ID=095c5451dd0f4c18b6df88530673002b
+
+# R2
+R2_BUCKET=r2-explorer-bucket
+
+# Durable Object
+MY_DO=llmchatapp_MyDurableObject
+
+# AI
+AI_MODEL=@cf/meta/llama-3.1-8b-instruct
