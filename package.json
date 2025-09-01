@@ -1,37 +1,44 @@
 {
-	"name": "worker-publisher-template",
-	"description": "A Cloudflare Worker template that creates and deploys Workers to a Dispatch Namespace via the Cloudflare SDK.",
-	"private": true,
-	"cloudflare": {
-		"label": "Worker Publisher Template",
-		"products": [
-			"Workers",
-			"Workers for Platforms"
-		],
-		"categories": [],
-		"icon_urls": [
-			"https://imagedelivery.net/wSMYJvS3Xw-n339CbDyDIA/5ca0ca32-e897-4699-d4c1-6b680512f000/public"
-		],
-		"preview_image_url": "https://imagedelivery.net/wSMYJvS3Xw-n339CbDyDIA/d7679f4e-00b3-40ca-b19b-701d3e794700/public",
-		"publish": true,
-		"bindings": {
-			"READONLY": {
-				"description": "If `true`, disables new uploads. If `false`, allows new uploads."
-			}
-		}
-	},
-	"scripts": {
-		"deploy:wfp": "tsx scripts/deploy-wfp.ts",
-		"deploy": "npm run deploy:wfp && wrangler deploy",
-		"dev": "wrangler dev",
-		"start": "wrangler dev"
-	},
-	"devDependencies": {
-		"tsx": "^4.20.4",
-		"typescript": "^5.9.2",
-		"wrangler": "^4.29.1"
-	},
-	"dependencies": {
-		"cloudflare": "^4.5.0"
-	}
+  "name": "pick-of-gods-worker-publisher",
+  "version": "1.0.0",
+  "description": "A Cloudflare Worker template that deploys Workers to a Dispatch Namespace via Cloudflare SDK, fully integrated with KV, R2, D1, and Durable Objects.",
+  "private": true,
+  "type": "module",
+  "cloudflare": {
+    "label": "Worker Publisher Template",
+    "products": [
+      "Workers",
+      "Workers for Platforms",
+      "KV",
+      "R2",
+      "Durable Objects"
+    ],
+    "categories": ["AI", "Deployment", "Serverless"],
+    "icon_urls": [
+      "https://imagedelivery.net/wSMYJvS3Xw-n339CbDyDIA/5ca0ca32-e897-4699-d4c1-6b680512f000/public"
+    ],
+    "preview_image_url": "https://imagedelivery.net/wSMYJvS3Xw-n339CbDyDIA/d7679f4e-00b3-40ca-b19b-701d3e794700/public",
+    "publish": true,
+    "bindings": {
+      "READONLY": {
+        "description": "If `true`, disables new uploads. If `false`, allows new uploads."
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "deploy:wfp": "tsx scripts/deploy-wfp.ts",
+    "deploy": "npm run build && npm run deploy:wfp && wrangler deploy",
+    "dev": "wrangler dev src/index.ts --local",
+    "start": "npm run dev"
+  },
+  "dependencies": {
+    "cloudflare": "^4.6.0"
+  },
+  "devDependencies": {
+    "tsx": "^5.0.0",
+    "typescript": "^5.9.2",
+    "wrangler": "^4.32.0",
+    "@types/node": "^20.5.0"
+  }
 }
