@@ -1,8 +1,8 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "worker-publisher-template",
+  "name": "pick-of-gods-chat-worker",
   "main": "./src/index.ts",
-  "compatibility_date": "2025-04-01",
+  "compatibility_date": "2025-09-01",
   "upload_source_maps": true,
   "dispatch_namespaces": [
     {
@@ -16,7 +16,7 @@
   },
   "vars": {
     "CLOUDFLARE_ACCOUNT_ID": "celestialartisanbot@gmail.com",
-    "READONLY": "true",
+    "READONLY": "false",
     "MESSAGE": "Hello from free-tier Worker!"
   },
   "kv_namespaces": [
@@ -36,5 +36,35 @@
       "name": "MY_DO",
       "class_name": "llmchatapp_MyDurableObject"
     }
-  ]
+  ],
+  "build": {
+    "command": "npm run build",
+    "watch_dir": "src"
+  },
+  "deployments": {
+    "workers_dev": true
+  },
+  "env": {
+    "free-tier": {
+      "kv_namespaces": [
+        {
+          "binding": "KVNAMESPACE",
+          "id": "095c5451dd0f4c18b6df88530673001b"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "R2_BUCKET",
+          "bucket_name": "r2-explorer-bucket"
+        }
+      ],
+      "durable_objects": {
+        "DISPATCHER": "llmchatapp_MyDurableObject"
+      },
+      "vars": {
+        "READONLY": "false",
+        "MESSAGE": "Hello from free-tier Worker!"
+      }
+    }
+  }
 }
