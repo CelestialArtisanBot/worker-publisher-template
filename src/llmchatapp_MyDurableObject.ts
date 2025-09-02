@@ -1,37 +1,53 @@
-{
-  "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "pick-of-gods-chat-worker",
-  "main": "./src/index.ts",
-  "compatibility_date": "2025-04-01",
-  "upload_source_maps": true,
-  "vars": {
-    "CLOUDFLARE_ACCOUNT_ID": "deee1798a610f6c7842da5b3777ef377",
-    "READONLY": "false",
-    "MESSAGE": "Hello from free-tier Worker!"
-  },
-  "kv_namespaces": [
-    {
-      "binding": "KV",
-      "id": "095c5451dd0f4c18b6df88530673001b"
+export class MyDurableObject {
+  state: DurableObjectState;
+  storage: DurableObjectStorage;
+
+  constructor(state: DurableObjectState) {
+    this.state = state;
+    this.storage = state.storage;
+  }
+
+  // Durable Object fetch handler
+  async fetch(request: Request): Promise<Response> {
+    const url = new URL(request.url);
+
+    if (request.method === "POST" && url.pathname === "/set") {
+      const { key, value } = await request.json<any>();
+      await this.storage.put(key, value);
+      return new Response(
+        JSON.stringify({ success: true, key, value }),
+        { headers: { "Content-Type": "application/json" } }
+      );
     }
-  ],
-  "r2_buckets": [
-    {
-      "binding": "R2_BUCKET",
-      "bucket_name": "r2-explorer-bucket"
+
+    if (request.method === "GET" && url.pathname.startsWith("/get")) {
+      const key = url.searchParams.get("key");
+      if (!key) return new Response("Missing key", { status: 400 });
+      const value = await this.storage.get(key);
+      return new Response(
+        JSON.stringify({ key, value }),
+        { headers: { "Content-Type": "application/json" } }
+      );
     }
-  ],
-  "durable_objects": [
-    {
-      "name": "MY_DO",
-      "class_name": "llmchatapp_MyDurableObject"
+
+    if (request.method === "GET" && url.pathname === "/list") {
+      const list = await this.storage.list();
+      return new Response(
+        JSON.stringify(Object.fromEntries(list)),
+        { headers: { "Content-Type": "application/json" } }
+      );
     }
-  ],
-  "scripts": {
-    "deploy": "wrangler deploy",
-    "dev": "wrangler dev"
-  },
-  "dev": {
-    "ip": "0.0.0.0"
+
+    if (request.method === "DELETE" && url.pathname.startsWith("/delete")) {
+      const key = url.searchParams.get("key");
+      if (!key) return new Response("Missing key", { status: 400 });
+      await this.storage.delete(key);
+      return new Response(
+        JSON.stringify({ deleted: key }),
+        { headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    return new Response("Not Found", { status: 404 });
   }
 }
