@@ -1,35 +1,61 @@
-name = "pick-of-gods-chat-worker"
-main = "src/index.ts"
-compatibility_date = "2025-09-02"
-account_id = "deee1798a610f6c7842da5b3777ef377"
-type = "javascript"
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "pick-of-gods-chat-worker",
+  "main": "./src/index.ts",
+  "compatibility_date": "2025-09-02",
+  "upload_source_maps": true,
 
-# Enable logging in Wrangler dashboard
-[observability.logs]
-enabled = true
+  // KV Namespaces
+  "kv_namespaces": [
+    {
+      "binding": "KVNAMESPACE",
+      "id": "095c5451dd0f4c18b6df88530673001b"
+    }
+  ],
 
-# KV Namespaces
-[[kv_namespaces]]
-binding = "KVNAMESPACE"
-id = "095c5451dd0f4c18b6df88530673001b"
+  // R2 Buckets
+  "r2_buckets": [
+    {
+      "binding": "R2_BUCKET",
+      "bucket_name": "r2-explorer-bucket"
+    }
+  ],
 
-# R2 Buckets
-[[r2_buckets]]
-binding = "R2_BUCKET"
-bucket_name = "r2-explorer-bucket"
+  // Durable Objects
+  "durable_objects": [
+    {
+      "name": "MY_DO",
+      "class_name": "llmchatapp_MyDurableObject"
+    }
+  ],
 
-# Durable Objects
-[[durable_objects.bindings]]
-name = "MY_DO"
-class_name = "llmchatapp_MyDurableObject"
+  // Environment Variables
+  "vars": {
+    "MESSAGE": "Hello from free-tier Worker!",
+    "READONLY": "false",
+    "D1_DB_ID": "85d4350c-259b-428c-9622-db1345571d34"
+  },
 
-# Environment variables
-[vars]
-MESSAGE = "Hello from free-tier Worker!"
-READONLY = "false"
-D1_DB_ID = "85d4350c-259b-428c-9622-db1345571d34"
+  // Observability
+  "observability": {
+    "enabled": true
+  },
 
-# Build configuration
-[build]
-command = "npm run build"
-watch_dir = "./src"
+  // Build scripts
+  "scripts": {
+    "deploy:wfp": "tsx scripts/deploy-wfp.ts",
+    "deploy": "npm run deploy:wfp && wrangler deploy",
+    "dev": "wrangler dev",
+    "start": "wrangler dev"
+  },
+
+  // Dependencies
+  "devDependencies": {
+    "tsx": "^4.20.4",
+    "typescript": "^5.9.2",
+    "wrangler": "^4.29.1"
+  },
+  "dependencies": {
+    "cloudflare": "^4.5.0"
+  }
+}
