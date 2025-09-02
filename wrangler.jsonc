@@ -1,24 +1,35 @@
-{
-  "name": "llm-chat-app",
-  "main": "src/index.ts",
-  "compatibility_date": "2025-09-01",
+name = "pick-of-gods-chat-worker"
+main = "src/index.ts"
+compatibility_date = "2025-09-02"
+account_id = "deee1798a610f6c7842da5b3777ef377"
+type = "javascript"
 
-  // Bindings for storage
-  "kv_namespaces": [
-    {
-      "binding": "KV",
-      "id": "llmchatapp_kv"
-    }
-  ],
-  "durable_objects": {
-    "bindings": [
-      {
-        "name": "MY_DURABLE_OBJECT",
-        "class_name": "MyDurableObject"
-      }
-    ]
-  },
-  "migrations": [
-    { "tag": "v1", "new_classes": ["MyDurableObject"] }
-  ]
-}
+# Enable logging in Wrangler dashboard
+[observability.logs]
+enabled = true
+
+# KV Namespaces
+[[kv_namespaces]]
+binding = "KVNAMESPACE"
+id = "095c5451dd0f4c18b6df88530673001b"
+
+# R2 Buckets
+[[r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "r2-explorer-bucket"
+
+# Durable Objects
+[[durable_objects.bindings]]
+name = "MY_DO"
+class_name = "llmchatapp_MyDurableObject"
+
+# Environment variables
+[vars]
+MESSAGE = "Hello from free-tier Worker!"
+READONLY = "false"
+D1_DB_ID = "85d4350c-259b-428c-9622-db1345571d34"
+
+# Build configuration
+[build]
+command = "npm run build"
+watch_dir = "./src"
